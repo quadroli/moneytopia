@@ -76,20 +76,32 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
                 contentResolver.openInputStream(uri)?.use { inputStream ->
                     BufferedReader(InputStreamReader(inputStream)).use { reader ->
                         reader.readLine() // Skip header
-                        var line = reader.readLine()
-                        while (line != null) {
-                            val tokens = line.split(",")
-                            val expense = Expense(
-                                date = LocalDateTime.parse(tokens[0]),
-                                category = tokens[1],
-                                amount = tokens[2].toDouble(),
-                                note = tokens[3],
-                                recurrence = Recurrence.None
-                            )
-                            realm.write {
-                                copyToRealm(expense)
+                        realm.write {
+                            var line = reader.readLine()
+                            while (line != null) {
+                                val tokens = line.split(",")
+                                val date = LocalDateTime.parse(tokens[0])
+                                val category = tokens[1]
+                                val amount = tokens[2].toDouble()
+                                val note = tokens[3]
+
+                                val existing = this.query<Expense>(
+                                    "_dateValue == $0 AND category == $1 AND amount == $2 AND note == $3",
+                                    date.toString(), category, amount, note
+                                ).first().find()
+
+                                if (existing == null) {
+                                    val expense = Expense(
+                                        date = date,
+                                        category = category,
+                                        amount = amount,
+                                        note = note,
+                                        recurrence = Recurrence.None
+                                    )
+                                    copyToRealm(expense)
+                                }
+                                line = reader.readLine()
                             }
-                            line = reader.readLine()
                         }
                     }
                 }
