@@ -5,6 +5,8 @@ import android.net.Uri
 import android.os.Build
 import android.provider.Settings
 import androidx.activity.compose.BackHandler
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -22,6 +24,8 @@ import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.Error
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.Language
+import androidx.compose.material.icons.outlined.Upload
+import androidx.compose.material.icons.outlined.Download
 import androidx.compose.material3.Icon
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.ListItemDefaults
@@ -89,6 +93,31 @@ fun SettingsPage(
     }
     val snackbarHostState = remember { SnackbarHostState() }
     val context = LocalContext.current
+
+    val exportLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.CreateDocument("text/csv"),
+        onResult = { uri ->
+            uri?.let {
+                settingsViewModel.exportExpenses(context, it)
+                coroutineScope.launch {
+                    snackbarHostState.showSnackbar(context.resources.getString(R.string.export_success))
+                }
+            }
+        }
+    )
+
+    val importLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.OpenDocument(),
+        onResult = { uri ->
+            uri?.let {
+                settingsViewModel.importExpenses(context, it)
+                coroutineScope.launch {
+                    snackbarHostState.showSnackbar(context.resources.getString(R.string.import_success))
+                }
+            }
+        }
+    )
+
     val intent = Intent(Settings.ACTION_APP_LOCALE_SETTINGS)
     val uri = Uri.fromParts("package", context.packageName, null)
     intent.data = uri
@@ -115,11 +144,36 @@ fun SettingsPage(
                         dialogTitle = stringResource(R.string.settings_title),
                         dialogText = stringResource(R.string.settings_desc)
                     )
+                                    
                 }
             }
         }
     ) { contentPadding ->
         val items = mutableListOf(
+            MenuSettingItem(
+                headlineContent = stringResource(R.string.currency_headline),
+                leadingContent = Icons.Outlined.AttachMoney,
+                supportingContent = stringResource(R.string.currency_supporting_text),
+                onClick = { currencyAlertDialog = true }
+            ),
+            MenuSettingItem(
+                headlineContent = stringResource(R.string.category_label),
+                leadingContent = Icons.Outlined.Category,
+                supportingContent = stringResource(R.string.category_desc),
+                onClick = { navController.navigate("settings/categories") }
+            ),
+            MenuSettingItem(
+                headlineContent = stringResource(R.string.export_data),
+                leadingContent = Icons.Outlined.Upload,
+                supportingContent = stringResource(R.string.export_data_desc),
+                onClick = { exportLauncher.launch("moneytopia_expenses.csv") }
+            ),
+            MenuSettingItem(
+                headlineContent = stringResource(R.string.import_data),
+                leadingContent = Icons.Outlined.Download,
+                supportingContent = stringResource(R.string.import_data_desc),
+                onClick = { importLauncher.launch(arrayOf("text/comma-separated-values", "text/csv", "application/csv")) }
+            ),
             MenuSettingItem(
                 headlineContent = stringResource(R.string.del_button),
                 leadingContent = Icons.Outlined.Delete,
@@ -138,18 +192,6 @@ fun SettingsPage(
                 supportingContent = stringResource(R.string.app_name),
                 onClick = { navController.navigate("settings/about") }
             ),
-            MenuSettingItem(
-                headlineContent = stringResource(R.string.category_label),
-                leadingContent = Icons.Outlined.Category,
-                supportingContent = stringResource(R.string.category_desc),
-                onClick = { navController.navigate("settings/categories") }
-            ),
-            MenuSettingItem(
-                headlineContent = stringResource(R.string.currency_headline),
-                leadingContent = Icons.Outlined.AttachMoney,
-                supportingContent = stringResource(R.string.currency_supporting_text),
-                onClick = { currencyAlertDialog = true }
-            )
         )
 
         if(Build.VERSION.SDK_INT < Build.VERSION_CODES.S) {
@@ -257,20 +299,7 @@ fun SettingsPage(
                 )
 
             }
-            Box(
-                modifier = Modifier
-                    .fillMaxHeight()
-                    .padding(bottom = 88.dp),
-                contentAlignment = Alignment.BottomCenter
-            ) {
-                SnackbarHost(hostState = snackbarHostState) {
-                    Snackbar(
-                        snackbarData = it,
-                        containerColor = MaterialTheme.colorScheme.surfaceColorAtElevation(2.dp),
-                        contentColor = MaterialTheme.colorScheme.onBackground
-                    )
-                }
-            }
+
         }
         BackHandler {
             navController.navigate("expenses") {

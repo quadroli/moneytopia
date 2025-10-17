@@ -65,6 +65,14 @@
     //**Settings Page**//
     <string name="del_button">Delete</string>
     <string name="del_desc">Delete All Transactions</string>
+    <string name="export_data">Export Data</string>
+    <string name="export_data_desc">Save all your expenses to a file</string>
+    <string name="import_data">Import Data</string>
+    <string name="import_data_desc">Load expenses from a file</string>
+    <string name="export_success">Data exported successfully</string>
+    <string name="export_error">Failed to export data</string>
+    <string name="import_success">Data imported successfully</string>
+    <string name="import_error">Failed to import data. Please check the file format.</string>
     <string name="lang_button">Language</string>
     <string name="lang_desc">Change Language</string>
     <string name="about_button">About</string>
