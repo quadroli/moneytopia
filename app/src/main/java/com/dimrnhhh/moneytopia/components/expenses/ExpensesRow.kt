@@ -69,7 +69,7 @@ fun ExpensesRow(
                     }
 
                     "reports" -> {
-                        showBottomSheet.value = false
+                        showBottomSheet.value = true
                     }
 
                     "analytics" -> {
